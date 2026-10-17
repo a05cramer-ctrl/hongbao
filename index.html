@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HONGBAO 红包</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Every hour the creator fees go into one red envelope. At :00 UTC it bursts into 88 random $HONGBAO holders.">
+<meta property="og:title" content="HONGBAO 红包">
+<meta property="og:description" content="Every hour, one red envelope. 88 holders grab it.">
+<meta property="og:image" content="og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Antique&family=Noto+Serif+SC:wght@700;900&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<!--CONFIG-->
+<script src="config.js"></script>
+<!--/CONFIG-->
+<style>
+/* Layout: one deep-red sheet of cut paper; layers lift off it in real depth, gold is only ever foil, coins and numbers. */
+:root{
+  --red-0:#5E060C;      /* deepest shadow paper */
+  --red-1:#8E0C14;      /* page ground */
+  --red-2:#B3121B;      /* raised paper */
+  --red-3:#D71A22;      /* envelope face */
+  --red-4:#E8393A;      /* paper highlight */
+  --gold-0:#9C6A1C;     /* foil shadow */
+  --gold-1:#D9A030;     /* foil */
+  --gold-2:#F2C14E;     /* foil bright */
+  --gold-3:#FFE39A;     /* foil glint */
+  --cream:#FFF1D6;      /* rice paper text */
+  --cream-dim:rgba(255,241,214,.72);
+  --ink:#2A0306;
+  --f-han:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --f-disp:"Zen Antique","Noto Serif SC",Georgia,serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gut:max(16px, env(safe-area-inset-left, 0px));
+  --gutR:max(16px, env(safe-area-inset-right, 0px));
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{overflow-x:clip}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--red-1);color:var(--cream);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.22;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .05  0 0 0 0 .06  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:70;background:var(--red-0)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold-2);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:var(--gut);padding-right:var(--gutR)}
+.han{font-family:var(--f-han);font-weight:900}
+.mono{font-family:var(--f-mono)}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ---------- cloud pattern ground ---------- */
+.clouds{position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='170' viewBox='0 0 260 170'><g fill='none' stroke='%237A0910' stroke-width='5' stroke-linecap='round'><path d='M20 70c0-16 22-20 30-8 4-18 34-18 36 2 14-6 26 6 18 18H26c-6 0-6-12-6-12z'/><path d='M44 62c6-6 14-4 14 4M78 62c4-6 12-6 14 2'/><path d='M150 140c0-14 18-18 26-7 4-15 30-15 31 2 12-5 22 5 16 15h-66c-6 0-7-10-7-10z'/><path d='M172 132c5-5 12-3 12 3M200 132c4-5 10-5 12 2'/></g></svg>")}
+
+/* ---------- gate ---------- */
+#gate{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 40%,var(--red-2),var(--red-0));
+  padding:env(safe-area-inset-top,0px) var(--gutR) env(safe-area-inset-bottom,0px) var(--gut);transition:opacity .45s ease .2s, visibility 0s linear .65s}
+#gate.gone{opacity:0;visibility:hidden}
+.card{position:relative;width:min(330px,86vw);aspect-ratio:330/520;perspective:1200px}
+.card-body{position:absolute;inset:0;border-radius:18px;background:linear-gradient(180deg,var(--red-3),var(--red-2));
+  box-shadow:0 30px 60px rgba(30,0,3,.55),0 0 0 1px rgba(255,227,154,.12) inset;overflow:hidden}
+.card-body::before{content:"";position:absolute;inset:0;background:inherit;opacity:0}
+.card-flap{position:absolute;left:0;right:0;top:0;height:64%;transform-origin:50% 0;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.6,0,.2,1)}
+.card-flap .face{position:absolute;inset:0;border-radius:18px 18px 50% 50%/18px 18px 22% 22%;background:linear-gradient(180deg,#E4262C,#C9161D);
+  box-shadow:0 10px 18px rgba(40,0,4,.45);backface-visibility:hidden}
+.card-flap .back{position:absolute;inset:0;border-radius:18px 18px 50% 50%/18px 18px 22% 22%;background:var(--red-0);transform:rotateX(180deg);backface-visibility:hidden}
+.card.open .card-flap{transform:rotateX(-178deg)}
+.card .from{position:absolute;left:0;right:0;top:16%;text-align:center;z-index:3;transition:opacity .3s}
+.card.open .from{opacity:0}
+.card .from .av{width:58px;height:58px;margin:0 auto 12px;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px var(--gold-2)}
+.card .from .av svg{display:block;width:100%;height:100%}
+.card .from p{margin:0;font-size:14px;color:var(--cream-dim)}
+.card .from h2{margin:14px 0 0;font:900 clamp(22px,6.6vw,28px)/1.25 var(--f-han);color:var(--gold-3);letter-spacing:.06em}
+.card .from .tr{margin-top:6px;font-size:13px;color:var(--cream-dim);letter-spacing:.02em}
+#kai{position:absolute;left:50%;top:64%;width:clamp(92px,28vw,108px);aspect-ratio:1;translate:-50% -50%;z-index:4;border:0;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle at 35% 30%,var(--gold-3),var(--gold-2) 40%,var(--gold-1) 75%,var(--gold-0));
+  box-shadow:0 8px 22px rgba(40,0,4,.55),0 0 0 4px rgba(255,227,154,.25);font:900 clamp(40px,12vw,48px)/1 var(--f-han);color:var(--ink);
+  transform-style:preserve-3d;animation:kaiPulse 1.8s ease-in-out infinite}
+#kai:hover{animation-play-state:paused;filter:brightness(1.06)}
+#kai.spin{animation:kaiSpin .9s cubic-bezier(.3,0,.2,1) forwards}
+@keyframes kaiPulse{0%,100%{scale:1}50%{scale:1.06}}
+@keyframes kaiSpin{to{transform:rotateY(1440deg);scale:1.15}}
+.gate-foot{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
+.gate-foot button{background:none;border:0;text-decoration:underline;cursor:pointer;color:var(--cream);font:inherit;letter-spacing:inherit;text-transform:inherit}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:rgba(94,6,12,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(242,193,78,.18)}
+nav .wrap{display:flex;align-items:center;gap:18px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
+.brand svg{width:30px;height:36px;flex:none}
+.brand b{font:400 20px/1 var(--f-disp);letter-spacing:.06em}
+.brand i{font:900 15px/1 var(--f-han);font-style:normal;color:var(--gold-2)}
+nav a.l{font-size:14px;font-weight:600;text-decoration:none;color:var(--cream-dim)}
+nav a.l:hover{color:var(--cream)}
+#snd{background:rgba(255,241,214,.08);border:1px solid rgba(242,193,78,.3);border-radius:999px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer}
+#snd svg{width:18px;height:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:999px;font-weight:700;font-size:15px;text-decoration:none;border:0;cursor:pointer;transition:transform .15s, filter .15s}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.btn.gold{background:linear-gradient(180deg,var(--gold-3),var(--gold-2) 45%,var(--gold-1));color:var(--ink);box-shadow:0 6px 0 var(--gold-0),0 12px 24px rgba(30,0,3,.4)}
+.btn.gold:active{transform:translateY(4px);box-shadow:0 2px 0 var(--gold-0)}
+.btn.ghost{background:transparent;color:var(--cream);box-shadow:0 0 0 1.5px rgba(255,241,214,.4) inset}
+nav .btn{padding:8px 16px;font-size:14px;box-shadow:0 3px 0 var(--gold-0)}
+@media (max-width:720px){nav a.l{display:none}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding-block:56px 40px}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:center}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-2)}
+.h1{margin:12px 0 0;display:flex;align-items:flex-end;gap:16px;line-height:.86}
+.h1 .lat{font:400 clamp(58px,10.5vw,138px)/.86 var(--f-disp);letter-spacing:.01em;color:var(--cream);text-shadow:0 4px 0 var(--red-0)}
+.chop{flex:none;display:grid;grid-template-rows:1fr 1fr;place-items:center;width:clamp(48px,6.4vw,82px);aspect-ratio:1/2;margin-bottom:.1em;border-radius:6px;
+  background:var(--gold-2);color:var(--red-1);box-shadow:0 0 0 3px var(--gold-2),0 0 0 5px var(--red-1),0 0 0 7px var(--gold-1),0 8px 16px rgba(30,0,3,.45);rotate:4deg}
+.chop span{font:900 clamp(30px,4.4vw,58px)/1 var(--f-han)}
+.lede{max-width:34ch;margin:22px 0 0;font-size:clamp(17px,1.6vw,20px);line-height:1.5;color:var(--cream);text-wrap:pretty}
+.lede em{font-style:normal;color:var(--gold-3)}
+.clock{margin-top:28px;display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
+.medal{position:relative;padding:14px 20px 12px;border-radius:14px;background:var(--red-0);box-shadow:0 0 0 1px rgba(242,193,78,.35) inset,0 10px 0 -4px rgba(20,0,2,.5)}
+.medal .k{font:500 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
+.medal .v{font:400 clamp(40px,5vw,56px)/1.05 var(--f-disp);color:var(--gold-2);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.medal .s{font:500 12px var(--f-mono);color:var(--cream-dim)}
+.medal.pot .v{color:var(--cream)}
+.medal.pot .v small{font-size:.42em;color:var(--gold-2);margin-left:6px}
+.cta{margin-top:26px;display:flex;flex-wrap:wrap;gap:12px}
+.skel{display:inline-block;min-width:4.5ch;height:.8em;border-radius:6px;background:linear-gradient(90deg,rgba(255,241,214,.08),rgba(255,241,214,.2),rgba(255,241,214,.08));background-size:200% 100%;animation:sk 1.4s linear infinite;vertical-align:middle}
+@keyframes sk{to{background-position:-200% 0}}
+
+.stage{position:relative;height:clamp(420px,52vw,600px);perspective:1400px;touch-action:pan-y}
+.env{position:absolute;left:50%;top:50%;width:min(400px,78vw);aspect-ratio:400/520;translate:-50% -46%;transform-style:preserve-3d;transition:transform .25s ease-out;cursor:pointer}
+.env .ly{position:absolute;inset:0;transform-style:preserve-3d}
+.env .ly svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.env .l-back{transform:translateZ(-50px);filter:drop-shadow(0 30px 30px rgba(25,0,3,.55))}
+.env .l-coins{transform:translateZ(-22px)}
+.env .l-front{transform:translateZ(0);filter:drop-shadow(0 -6px 10px rgba(40,0,4,.35)) drop-shadow(0 14px 18px rgba(30,0,3,.35))}
+.env .l-fret{transform:translateZ(14px);filter:drop-shadow(0 4px 3px rgba(40,0,4,.5))}
+.env .l-seal{transform:translateZ(36px);filter:drop-shadow(0 8px 8px rgba(40,0,4,.5))}
+.env .shadow{position:absolute;left:8%;right:8%;bottom:-9%;height:8%;border-radius:50%;background:radial-gradient(closest-side,rgba(20,0,2,.55),transparent);transform:translateZ(-80px)}
+.stage .hint{position:absolute;bottom:4px;left:0;right:0;text-align:center;font:500 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim)}
+.lantern{position:absolute;width:56px;top:-8px;transform-origin:50% 0;animation:sway 5s ease-in-out infinite;filter:drop-shadow(0 10px 14px rgba(20,0,2,.5))}
+.lantern.a{left:4%}.lantern.b{right:6%;animation-delay:-2.2s;width:44px}
+@keyframes sway{0%,100%{rotate:-4deg}50%{rotate:4deg}}
+
+.seedbar{position:relative;margin-top:30px;border-top:1px solid rgba(242,193,78,.22);border-bottom:1px solid rgba(242,193,78,.22);background:rgba(94,6,12,.55)}
+.seedbar .wrap{display:flex;gap:18px;align-items:center;min-height:52px;font:500 13px var(--f-mono);flex-wrap:wrap;padding-block:10px}
+.seedbar .lbl{color:var(--gold-2);letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+.seedbar .hash{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--cream)}
+.seedbar .hash span{transition:color .6s}
+.seedbar .hash span.fresh{color:var(--gold-3)}
+.seedbar .slot{color:var(--cream-dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gold-2);box-shadow:0 0 0 0 rgba(242,193,78,.6);animation:ping 2s infinite;flex:none}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(242,193,78,0)}100%{box-shadow:0 0 0 0 rgba(242,193,78,0)}}
+
+/* ---------- sections ---------- */
+section{position:relative;padding-block:clamp(64px,9vw,120px)}
+.shead{display:grid;grid-template-columns:auto 1fr;gap:18px 26px;align-items:end;margin-bottom:38px}
+.shead .bigh{font:900 clamp(64px,9vw,120px)/.9 var(--f-han);color:var(--red-3);text-shadow:0 2px 0 var(--red-4),0 -2px 0 var(--red-0),0 10px 18px rgba(30,0,3,.5)}
+.shead h2{margin:0;font:400 clamp(30px,4vw,48px)/1.05 var(--f-disp);text-wrap:balance}
+.shead p{margin:10px 0 0;max-width:58ch;color:var(--cream-dim);text-wrap:pretty}
+@media (max-width:620px){.shead{grid-template-columns:1fr}.shead .bigh{font-size:72px}}
+
+/* ---------- split ---------- */
+.splitbox{position:relative;border-radius:22px;background:var(--red-0);box-shadow:0 0 0 1px rgba(242,193,78,.25) inset;padding:22px clamp(14px,2.4vw,28px) 26px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font:500 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
+.field .in{display:flex;align-items:center;gap:8px;background:var(--red-1);border-radius:12px;padding:0 14px;box-shadow:0 0 0 1px rgba(242,193,78,.35) inset}
+.field input{width:7.5ch;background:none;border:0;color:var(--cream);font:400 26px/1 var(--f-disp);padding:10px 0;outline:none;font-variant-numeric:tabular-nums}
+.field .in span{font:600 13px var(--f-mono);color:var(--gold-2)}
+.seedline{margin-left:auto;font:500 12px var(--f-mono);color:var(--cream-dim);text-align:right;max-width:100%;min-width:0;overflow-wrap:anywhere}
+.seedline b{color:var(--gold-2);font-weight:500}
+.grid88{--cols:11;margin-top:22px;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:clamp(5px,.8vw,10px);perspective:900px}
+@media (max-width:760px){.grid88{--cols:8}}
+.mini{position:relative;aspect-ratio:3/4;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.3,.1,.2,1)}
+.mini.flip{transform:rotateY(180deg)}
+.mini .fa,.mini .fb{position:absolute;inset:0;border-radius:clamp(4px,.6vw,8px);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.mini .fa{background:linear-gradient(180deg,var(--red-4),var(--red-3) 30%,var(--red-2));box-shadow:0 3px 6px rgba(20,0,2,.5)}
+.mini .fa::before{content:"";position:absolute;left:0;right:0;top:0;height:42%;border-radius:inherit;border-bottom-left-radius:50% 30%;border-bottom-right-radius:50% 30%;background:rgba(255,255,255,.08);box-shadow:0 2px 3px rgba(60,0,6,.35)}
+.mini .fa::after{content:"";position:absolute;left:50%;top:42%;width:28%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--gold-3),var(--gold-1))}
+.mini .fb{transform:rotateY(180deg);background:linear-gradient(180deg,#FFF6E2,#F6DFB0);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 3px 6px rgba(20,0,2,.5);overflow:hidden}
+.mini .fb .amt{font:600 clamp(8px,1vw,12.5px)/1 var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mini .fb .n{font:500 clamp(6.5px,.72vw,9px)/1 var(--f-mono);opacity:.55}
+.mini.best .fb{background:linear-gradient(180deg,var(--gold-3),var(--gold-2));box-shadow:0 0 0 2px var(--gold-3),0 0 22px rgba(255,227,154,.7)}
+.mini.best::after{content:"手气最佳";position:absolute;left:50%;top:-14px;translate:-50% 0;white-space:nowrap;font:900 clamp(8px,.9vw,11px)/1 var(--f-han);color:var(--ink);background:var(--gold-2);padding:3px 6px;border-radius:999px;transform:rotateY(180deg) translateZ(1px);z-index:2;opacity:0;transition:opacity .3s .5s}
+.mini.best.flip::after{opacity:1}
+.stats{margin-top:22px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{padding:14px 16px;border-radius:14px;background:var(--red-1);box-shadow:0 0 0 1px rgba(242,193,78,.18) inset;min-width:0}
+.stat .k{font:500 11px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--cream-dim)}
+.stat .v{font:400 clamp(22px,2.4vw,30px)/1.15 var(--f-disp);color:var(--cream);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat .v small{font:500 12px var(--f-mono);color:var(--gold-2);margin-left:4px}
+.stat.b .v{color:var(--gold-2)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- how ---------- */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;counter-reset:s}
+.step{position:relative;padding:22px 18px 20px;border-radius:18px;background:var(--red-2);box-shadow:0 -2px 0 var(--red-4) inset,0 14px 0 -6px var(--red-0),0 22px 30px rgba(20,0,2,.35);min-width:0}
+.step .t{font:600 13px var(--f-mono);color:var(--gold-2);letter-spacing:.06em}
+.step .hz{position:absolute;right:14px;top:12px;font:900 34px/1 var(--f-han);color:var(--red-0);opacity:.55}
+.step h3{margin:14px 0 8px;font:400 22px/1.15 var(--f-disp)}
+.step p{margin:0;font-size:15px;color:var(--cream-dim)}
+@media (max-width:1000px){.steps{grid-template-columns:repeat(2,1fr)}.step:last-child{grid-column:1/-1}}
+@media (max-width:560px){.steps{grid-template-columns:1fr}}
+
+/* ---------- history ---------- */
+.hist{display:grid;gap:10px}
+.hrow{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:12px;align-items:center;padding:14px 18px;border-radius:14px;background:var(--red-0);box-shadow:0 0 0 1px rgba(242,193,78,.18) inset;font:500 14px var(--f-mono);font-variant-numeric:tabular-nums}
+.hrow .tm{color:var(--gold-2)}
+.hrow a{color:var(--cream-dim);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hrow a:hover{color:var(--cream)}
+@media (max-width:640px){.hrow{grid-template-columns:1fr 1fr}}
+.feed{margin-top:18px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:hidden;font:500 13px var(--f-mono);mask-image:linear-gradient(180deg,#000 70%,transparent)}
+.feed div{display:flex;gap:10px;color:var(--cream-dim)}
+.feed b{color:var(--gold-2);font-weight:600}
+
+/* ---------- rules ---------- */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 0;border-top:1px solid rgba(242,193,78,.18)}
+.rules .k{font:600 13px var(--f-mono);color:var(--gold-2)}
+.rules .v{color:var(--cream)}
+.rules .v code{font:500 13px var(--f-mono);color:var(--gold-3);overflow-wrap:anywhere}
+@media (max-width:860px){.rules{grid-template-columns:1fr}.rules li{grid-template-columns:1fr;gap:4px}}
+
+/* ---------- token ---------- */
+.split-bar{display:flex;height:64px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(242,193,78,.3) inset}
+.split-bar div{display:flex;align-items:center;padding:0 18px;font:600 15px var(--f-mono);white-space:nowrap;overflow:hidden}
+.split-bar .e{flex:88;background:linear-gradient(180deg,var(--red-4),var(--red-3));}
+.split-bar .bn{flex:12;background:linear-gradient(180deg,var(--gold-3),var(--gold-1));color:var(--ink);justify-content:center;padding:0 6px}
+.legend{display:flex;justify-content:space-between;gap:14px;margin-top:10px;font:500 13px var(--f-mono);color:var(--cream-dim);flex-wrap:wrap}
+.ca{margin-top:28px;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 18px;border-radius:14px;background:var(--red-0);box-shadow:0 0 0 1px rgba(242,193,78,.3) inset;max-width:640px}
+.ca code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 14px var(--f-mono)}
+.ca button{flex:none;border:0;border-radius:10px;padding:10px 14px;background:var(--gold-2);color:var(--ink);font-weight:700;cursor:pointer}
+
+footer{padding-block:60px calc(40px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(242,193,78,.18);background:var(--red-0)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+footer .bless{font:900 clamp(28px,4vw,40px)/1 var(--f-han);color:var(--gold-2);letter-spacing:.08em}
+footer p{margin:0;max-width:60ch;font-size:13px;color:var(--cream-dim)}
+
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:55}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:75;background:var(--gold-2);color:var(--ink);font-weight:700;padding:10px 18px;border-radius:999px;box-shadow:0 10px 20px rgba(20,0,2,.4);opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr}
+  .stage{order:-1;height:clamp(380px,100vw,480px);margin-top:-10px}
+  .env{width:min(300px,64vw);translate:-50% -50%}
+  .lede{max-width:none}
+  .lantern.a{display:none}
+  .lantern.b{width:36px;right:3%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<!-- ============ GATE ============ -->
+<div id="gate" role="dialog" aria-label="Open the red envelope">
+  <div class="clouds"></div>
+  <div class="card" id="card">
+    <div class="card-body"></div>
+    <div class="card-flap"><div class="face"></div><div class="back"></div></div>
+    <div class="from">
+      <div class="av"><svg viewBox="0 0 58 58" aria-hidden="true"><rect width="58" height="58" fill="#8E0C14"/><rect x="12" y="9" width="34" height="42" rx="4" fill="#D71A22"/><path d="M12 13q17 12 34 0v-1a3 3 0 0 0-3-3H15a3 3 0 0 0-3 3z" fill="#B3121B"/><circle cx="29" cy="28" r="7" fill="#F2C14E"/></svg></div>
+      <p>HONGBAO sent you a red envelope</p>
+      <h2>恭喜发财，大吉大利</h2>
+      <div class="tr">Wishing you wealth and great luck</div>
+    </div>
+    <button id="kai" aria-label="Open">開</button>
+  </div>
+  <div class="gate-foot">Tap 開 to open · <button id="skip">Enter without sound</button></div>
+</div>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="HONGBAO home">
+      <svg viewBox="0 0 30 36" aria-hidden="true"><rect x="1" y="1" width="28" height="34" rx="4" fill="#D71A22"/><path d="M1 6q14 10 28 0V5a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4z" fill="#B3121B"/><circle cx="15" cy="17" r="5.5" fill="#F2C14E"/></svg>
+      <b>HONGBAO</b><i>红包</i>
+    </a>
+    <a class="l" href="#split">The grab</a>
+    <a class="l" href="#how">How it works</a>
+    <a class="l" href="#rules">Rules</a>
+    <button id="snd" aria-label="Sound on" title="Sound"><svg viewBox="0 0 24 24" fill="none" stroke="#F2C14E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="w1" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="w2" d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+    <a class="btn gold" id="navBuy" href="#" target="_blank" rel="noopener" hidden>Buy $HONGBAO</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="clouds"></div>
+  <svg class="lantern a" viewBox="0 0 56 120" aria-hidden="true"><line x1="28" y1="0" x2="28" y2="24" stroke="#D9A030" stroke-width="2"/><rect x="18" y="22" width="20" height="7" rx="2" fill="#D9A030"/><ellipse cx="28" cy="58" rx="26" ry="30" fill="#D71A22"/><path d="M28 28v60M14 33q-8 25 0 50M42 33q8 25 0 50" stroke="#8E0C14" stroke-width="2" fill="none"/><rect x="18" y="86" width="20" height="7" rx="2" fill="#D9A030"/><path d="M22 93v20M28 93v24M34 93v20" stroke="#F2C14E" stroke-width="2"/></svg>
+  <svg class="lantern b" viewBox="0 0 56 120" aria-hidden="true"><line x1="28" y1="0" x2="28" y2="24" stroke="#D9A030" stroke-width="2"/><rect x="18" y="22" width="20" height="7" rx="2" fill="#D9A030"/><ellipse cx="28" cy="58" rx="26" ry="30" fill="#D71A22"/><path d="M28 28v60M14 33q-8 25 0 50M42 33q8 25 0 50" stroke="#8E0C14" stroke-width="2" fill="none"/><rect x="18" y="86" width="20" height="7" rx="2" fill="#D9A030"/><path d="M22 93v20M28 93v24M34 93v20" stroke="#F2C14E" stroke-width="2"/></svg>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Solana · pump.fun · every hour at :00 UTC</div>
+      <h1 class="h1"><span class="lat">HONGBAO</span><span class="chop" aria-hidden="true"><span>红</span><span>包</span></span></h1>
+      <p class="lede">Every hour the creator fees go into one red envelope. At <em>:00 UTC</em> it bursts open into <em>88 random holders</em>, in random amounts, the way a WeChat lucky envelope splits.</p>
+      <div class="clock">
+        <div class="medal">
+          <div class="k">Next envelope opens in</div>
+          <div class="v" id="cd">--:--</div>
+          <div class="s" id="cdAt">at :00 UTC</div>
+        </div>
+        <div class="medal pot" id="potBox" hidden>
+          <div class="k">In the envelope now</div>
+          <div class="v"><span id="pot"><span class="skel"></span></span><small>SOL</small></div>
+          <div class="s" id="potUsd"><span class="skel"></span></div>
+        </div>
+      </div>
+      <div class="cta">
+        <a class="btn gold" id="heroBuy" href="#" target="_blank" rel="noopener" hidden>Buy $HONGBAO</a>
+        <a class="btn ghost" id="heroChart" href="#" target="_blank" rel="noopener" hidden>Chart</a>
+        <a class="btn gold" id="heroSplit" href="#split">Try the 88-way split</a>
+        <a class="btn ghost" id="heroX" href="#" target="_blank" rel="noopener" hidden>X</a>
+      </div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="env" id="env" role="img" aria-label="A red paper envelope bursting with gold coins">
+        <div class="shadow"></div>
+        <div class="ly l-back"><svg viewBox="0 0 400 520"><rect x="22" y="40" width="356" height="460" rx="18" fill="#9E0F17"/><rect x="22" y="40" width="356" height="460" rx="18" fill="url(#gIn)"/>
+          <defs><linearGradient id="gIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5E060C" stop-opacity=".7"/><stop offset=".5" stop-color="#5E060C" stop-opacity="0"/></linearGradient></defs></svg></div>
+        <div class="ly l-coins"><svg viewBox="0 0 400 520" id="pile"></svg></div>
+        <div class="ly l-front"><svg viewBox="0 0 400 520">
+          <defs>
+            <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8393A"/><stop offset=".25" stop-color="#D71A22"/><stop offset="1" stop-color="#B3121B"/></linearGradient>
+            <linearGradient id="gEdge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
+          </defs>
+          <path d="M22 190 Q200 300 378 190 V482 a18 18 0 0 1 -18 18 H40 a18 18 0 0 1 -18 -18 Z" fill="url(#gF)"/>
+          <path d="M22 190 Q200 300 378 190 V482 a18 18 0 0 1 -18 18 H40 a18 18 0 0 1 -18 -18 Z" fill="url(#gEdge)"/>
+          <path d="M22 190 Q200 300 378 190" fill="none" stroke="#FF6B5E" stroke-opacity=".55" stroke-width="2"/>
+        </svg></div>
+        <div class="ly l-fret"><svg viewBox="0 0 400 520" fill="none" stroke="#E0A526" stroke-width="5" stroke-linecap="square">
+          <path d="M44 420v56h56M44 452h24v-24h-24"/><path d="M356 420v56h-56M356 452h-24v-24h24"/>
+          <path d="M48 238 Q200 322 352 238" stroke-width="3" stroke-opacity=".9"/>
+          <path d="M104 344h40M256 344h40M96 336v16M304 336v16" stroke-width="4"/>
+        </svg></div>
+        <div class="ly l-seal"><svg viewBox="0 0 400 520">
+          <defs><radialGradient id="gS" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#FFE39A"/><stop offset=".45" stop-color="#F2C14E"/><stop offset=".85" stop-color="#D9A030"/><stop offset="1" stop-color="#9C6A1C"/></radialGradient></defs>
+          <circle cx="200" cy="344" r="60" fill="url(#gS)"/>
+          <circle cx="200" cy="344" r="50" fill="none" stroke="#9C6A1C" stroke-width="3"/>
+          <text x="200" y="368" text-anchor="middle" font-family="Noto Serif SC, Songti SC, serif" font-weight="900" font-size="64" fill="#A30F17">福</text>
+        </svg></div>
+      </div>
+      <div class="hint">Tap the envelope</div>
+    </div>
+  </div>
+  <div class="seedbar" aria-live="off">
+    <div class="wrap">
+      <span class="dot"></span>
+      <span class="lbl">Draw seed if the hour closed now</span>
+      <span class="hash" id="hash"><span class="skel" style="min-width:24ch"></span></span>
+      <span class="slot tab" id="slot"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SPLIT ============ -->
+<section id="split">
+  <div class="wrap">
+    <div class="shead">
+      <div class="bigh" aria-hidden="true">抢</div>
+      <div>
+        <h2>One envelope, 88 grabs</h2>
+        <p>This is the split WeChat uses for lucky envelopes. Each grab takes a random share between almost nothing and twice the average of what is left, and the last wallet takes the rest. Every new Solana block reshuffles it. Type any pot to see it cut.</p>
+      </div>
+    </div>
+    <div class="splitbox">
+      <div class="controls">
+        <div class="field">
+          <label for="potIn">Pot</label>
+          <div class="in"><input id="potIn" type="number" min="0.088" max="100000" step="0.01" value="8.88" inputmode="decimal"><span>SOL</span></div>
+        </div>
+        <button class="btn gold" id="cut">Cut 88 envelopes</button>
+        <div class="seedline" id="seedline">Seed: <b>waiting for the next block</b></div>
+      </div>
+      <div class="grid88" id="grid88"></div>
+      <div class="stats">
+        <div class="stat b"><div class="k">Best luck 手气最佳</div><div class="v" id="sBest">–</div></div>
+        <div class="stat"><div class="k">Smallest grab</div><div class="v" id="sMin">–</div></div>
+        <div class="stat"><div class="k">Median grab</div><div class="v" id="sMed">–</div></div>
+        <div class="stat"><div class="k">Best vs average</div><div class="v" id="sX">–</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section id="how">
+  <div class="clouds" style="opacity:.3"></div>
+  <div class="wrap">
+    <div class="shead">
+      <div class="bigh" aria-hidden="true">时</div>
+      <div>
+        <h2>What happens every hour</h2>
+        <p>One bot, one wallet, one envelope per hour. Every step is on-chain and can be checked against the block it used.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="hz">入</span><div class="t">:00 – :59</div><h3>Fees fill it</h3><p>Every trade of $HONGBAO pays pump.fun creator fees to the envelope wallet. 88% stays in the envelope, 12% buys $HONGBAO and burns it.</p></div>
+      <div class="step"><span class="hz">种</span><div class="t">:00:00</div><h3>A block sets the seed</h3><p>The hash of the first Solana block after the hour turns is the seed. Nobody knows it before it lands, including us.</p></div>
+      <div class="step"><span class="hz">抽</span><div class="t">:00:05</div><h3>88 wallets are drawn</h3><p>Every wallet holding 100,000 $HONGBAO or more gets one ticket. The seed shuffles them and the first 88 win.</p></div>
+      <div class="step"><span class="hz">分</span><div class="t">:00:10</div><h3>The lucky split</h3><p>The pot is cut 88 ways with the WeChat lucky split from the section above. One wallet always gets best luck.</p></div>
+      <div class="step"><span class="hz">发</span><div class="t">:01</div><h3>Sent in SOL</h3><p>All 88 payouts go out straight to the wallets. Under 0.088 SOL, the envelope stays shut and rolls into the next hour.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIVE (shown when wallet/CA set) ============ -->
+<section id="live" hidden>
+  <div class="wrap">
+    <div class="shead">
+      <div class="bigh" aria-hidden="true">账</div>
+      <div>
+        <h2>Envelopes sent</h2>
+        <p>Read straight from the envelope wallet on Solana. Each row is one hour's envelope.</p>
+      </div>
+    </div>
+    <div class="hist" id="hist"></div>
+    <div class="feed" id="feed" hidden></div>
+  </div>
+</section>
+
+<!-- ============ RULES ============ -->
+<section id="rules">
+  <div class="wrap">
+    <div class="shead">
+      <div class="bigh" aria-hidden="true">规</div>
+      <div><h2>The rules</h2><p>Fixed at launch. Nothing here changes after the coin goes live.</p></div>
+    </div>
+    <ul class="rules">
+      <li><span class="k">When</span><span class="v">Every hour at :00 UTC, 24 envelopes a day.</span></li>
+      <li><span class="k">Winners</span><span class="v">88 wallets per envelope, one ticket per wallet, no matter how big the bag.</span></li>
+      <li><span class="k">Ticket</span><span class="v">Hold at least 100,000 $HONGBAO (0.01% of supply) when the hour turns.</span></li>
+      <li><span class="k">Not eligible</span><span class="v">Bonding curve, pool, burn and dev wallets.</span></li>
+      <li><span class="k">Seed</span><span class="v"><code>sha256(blockhash ‖ hour ‖ mint)</code> from the first block after :00.</span></li>
+      <li><span class="k">Split</span><span class="v">Each grab is random between 0.0001 SOL and twice the average left. Last grab takes the rest.</span></li>
+      <li><span class="k">Minimum</span><span class="v">Under 0.088 SOL, the envelope rolls over to the next hour.</span></li>
+      <li><span class="k">Fees</span><span class="v">88% to the envelope, 12% buys and burns $HONGBAO.</span></li>
+      <li><span class="k">Fewer than 88</span><span class="v">If fewer than 88 wallets qualify, every one of them gets an envelope.</span></li>
+      <li><span class="k">Paid in</span><span class="v">SOL, sent straight to the winning wallets. No claim, no sign-up.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ TOKEN ============ -->
+<section id="token" style="padding-top:0">
+  <div class="wrap">
+    <div class="shead">
+      <div class="bigh" aria-hidden="true">币</div>
+      <div><h2>$HONGBAO</h2><p>Launched on pump.fun. Where every creator fee goes:</p></div>
+    </div>
+    <div class="split-bar" role="img" aria-label="88% red envelope, 12% buy and burn">
+      <div class="e">88% · the hourly envelope</div>
+      <div class="bn">12%</div>
+    </div>
+    <div class="legend"><span>Red envelope to 88 holders every hour</span><span>Buy + burn $HONGBAO</span></div>
+    <div class="ca" id="caBox" hidden><code id="caTxt"></code><button id="caCopy">Copy CA</button></div>
+    <div class="cta" id="tokCta" hidden>
+      <a class="btn gold" id="tokBuy" href="#" target="_blank" rel="noopener">Buy on pump.fun</a>
+      <a class="btn ghost" id="tokChart" href="#" target="_blank" rel="noopener">Chart</a>
+      <a class="btn ghost" id="tokX" href="#" target="_blank" rel="noopener" hidden>X</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="bless">恭喜发财</div>
+    <p>$HONGBAO is a memecoin with no promise of value. Envelopes are paid from creator fees only, so an hour with no trading has an empty envelope. Not financial advice.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(()=>{
+"use strict";
+const CFG = Object.assign({WINNERS:88,MIN_HOLD:100000,MIN_POT:0.088}, window.HONGBAO_CFG||{});
+const $ = s=>document.querySelector(s);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LAMPORTS = 1e9;
+
+/* ================= SOUND ================= */
+let AC=null, soundOn=false, noiseBuf=null;
+function audioInit(){
+  if(AC) return;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    const n = AC.sampleRate*0.25; noiseBuf = AC.createBuffer(1,n,AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  }catch(e){AC=null}
+}
+function pop(t, f, g, len){
+  const s = AC.createBufferSource(); s.buffer = noiseBuf;
+  const bp = AC.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=f; bp.Q.value=0.9;
+  const gn = AC.createGain(); gn.gain.setValueAtTime(g,t); gn.gain.exponentialRampToValueAtTime(0.0008,t+len);
+  s.connect(bp).connect(gn).connect(AC.destination); s.start(t); s.stop(t+len+0.02);
+}
+function firecrackers(n=40, spread=1.6){
+  if(!soundOn||!AC) return;
+  const t0 = AC.currentTime+0.02;
+  for(let i=0;i<n;i++){
+    const t = t0 + Math.pow(Math.random(),1.4)*spread;
+    pop(t, 1200+Math.random()*3800, 0.35+Math.random()*0.4, 0.03+Math.random()*0.05);
+    if(Math.random()<0.12) pop(t, 160+Math.random()*120, 0.9, 0.18);
+  }
+}
+let lastClink=0;
+function clink(v=0.12){
+  if(!soundOn||!AC) return;
+  const now = AC.currentTime; if(now-lastClink<0.035) return; lastClink=now;
+  const base = 2600+Math.random()*1500;
+  [1,1.48,2.21].forEach((m,i)=>{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type="sine"; o.frequency.value=base*m;
+    g.gain.setValueAtTime(v/(i+1),now); g.gain.exponentialRampToValueAtTime(0.0005,now+0.22-i*0.04);
+    o.connect(g).connect(AC.destination); o.start(now); o.stop(now+0.25);
+  });
+}
+function chime(){
+  if(!soundOn||!AC) return;
+  const now=AC.currentTime;
+  [523.25,659.25,783.99,1046.5].forEach((f,i)=>{
+    const o=AC.createOscillator(),g=AC.createGain(); o.type="triangle"; o.frequency.value=f;
+    const t=now+i*0.09; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+0.02); g.gain.exponentialRampToValueAtTime(0.0005,t+0.9);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t+1);
+  });
+}
+function setSound(on){
+  soundOn = on && !!AC;
+  const b=$("#snd"); b.setAttribute("aria-label", soundOn?"Sound on":"Sound off");
+  b.querySelectorAll(".w1,.w2").forEach(p=>p.style.opacity=soundOn?1:.15);
+}
+$("#snd").addEventListener("click",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); setSound(!soundOn); if(soundOn) clink(.15); });
+
+/* ================= FX CANVAS: coins + confetti ================= */
+const cv = $("#fx"), cx = cv.getContext("2d");
+let W=0,H=0,DPR=1;
+function fit(){ DPR=Math.min(2,window.devicePixelRatio||1); W=innerWidth; H=innerHeight; cv.width=W*DPR; cv.height=H*DPR; cx.setTransform(DPR,0,0,DPR,0,0); }
+fit(); addEventListener("resize",fit);
+const parts=[];
+function spawnCoins(x,y,n,power=14,spreadX=1){
+  if(reduce) n=Math.min(n,6);
+  for(let i=0;i<n;i++){
+    const a = -Math.PI/2 + (Math.random()-.5)*1.25*spreadX;
+    const sp = power*(0.55+Math.random()*0.65);
+    parts.push({k:"c",x:x+(Math.random()-.5)*40,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,r:8+Math.random()*9,ph:Math.random()*6.3,spin:.12+Math.random()*.25,rot:(Math.random()-.5)*.6,life:0,rest:0,a:1});
+  }
+  while(parts.length>700) parts.shift();
+}
+function spawnConfetti(x,y,n,power=12){
+  if(reduce) return;
+  for(let i=0;i<n;i++){
+    const a = -Math.PI/2 + (Math.random()-.5)*1.8;
+    const sp = power*(0.4+Math.random()*0.8);
+    parts.push({k:"p",x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,w:5+Math.random()*7,h:3+Math.random()*4,ph:Math.random()*6.3,spin:.15+Math.random()*.3,rot:Math.random()*6.3,vr:(Math.random()-.5)*.3,life:0,a:1,col:Math.random()<.6?"#F2C14E":(Math.random()<.5?"#FFF1D6":"#E8393A")});
+  }
+}
+function drawCoin(p){
+  const sx = Math.max(.1,Math.abs(Math.cos(p.ph)));
+  cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot); cx.globalAlpha=p.a;
+  // edge
+  cx.fillStyle="#9C6A1C"; cx.beginPath(); cx.ellipse(0,1.6,p.r*sx,p.r,0,0,Math.PI*2); cx.fill();
+  const g = cx.createRadialGradient(-p.r*.35*sx,-p.r*.4,p.r*.1,0,0,p.r);
+  const lit = Math.cos(p.ph)>0;
+  g.addColorStop(0, lit?"#FFE9A8":"#F2C14E"); g.addColorStop(.55,"#E8B23E"); g.addColorStop(1,"#C48A24");
+  cx.fillStyle=g; cx.beginPath(); cx.ellipse(0,0,p.r*sx,p.r,0,0,Math.PI*2); cx.fill();
+  cx.strokeStyle="rgba(156,106,28,.75)"; cx.lineWidth=Math.max(1,p.r*.1);
+  cx.beginPath(); cx.ellipse(0,0,p.r*.74*sx,p.r*.74,0,0,Math.PI*2); cx.stroke();
+  const hs=p.r*.24; cx.fillStyle="#7A0910"; cx.fillRect(-hs*sx,-hs,hs*2*sx,hs*2);
+  cx.restore();
+}
+function drawPaper(p){
+  cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot); cx.scale(1,Math.cos(p.ph)); cx.globalAlpha=p.a;
+  cx.fillStyle=p.col; cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore();
+}
+let lastT=performance.now();
+function loop(t){
+  const dt=Math.min(2.2,(t-lastT)/16.67); lastT=t;
+  cx.clearRect(0,0,W,H);
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i]; p.life+=dt;
+    if(p.k==="c"){
+      p.vy+=0.55*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.ph+=p.spin*dt; p.vx*=Math.pow(.995,dt);
+      const fl=H-p.r;
+      if(p.y>fl){ p.y=fl; if(Math.abs(p.vy)>2.4){ p.vy*=-0.42; p.vx*=.78; if(Math.random()<.35) clink(.05);} else { p.vy=0; p.vx*=.85; p.spin*=.86; p.rest+=dt; } }
+      if(p.rest>70) p.a-=0.03*dt;
+      if(p.life>900) p.a-=0.05*dt;
+      drawCoin(p);
+    }else{
+      p.vy+=0.18*dt; p.vx*=Math.pow(.97,dt); p.vy*=Math.pow(.975,dt); p.x+=p.vx*dt+Math.sin(p.life*.08)*.4; p.y+=p.vy*dt; p.ph+=p.spin*dt; p.rot+=p.vr*dt;
+      if(p.life>160) p.a-=0.02*dt;
+      drawPaper(p);
+    }
+    if(p.a<=0||p.x<-60||p.x>W+60||p.y>H+80) parts.splice(i,1);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ================= ENVELOPE: pile + tilt ================= */
+(function buildPile(){
+  const svg=$("#pile"); const ns="http://www.w3.org/2000/svg";
+  const coins=[[120,200,26],[165,176,30],[214,168,32],[262,180,29],[300,204,24],[96,226,22],[142,214,28],[190,206,31],[240,210,30],[286,226,25],[200,140,22],[150,150,20],[256,148,21],[118,168,18],[290,168,19]];
+  let html=`<defs><radialGradient id="gc" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#FFE9A8"/><stop offset=".55" stop-color="#E8B23E"/><stop offset="1" stop-color="#B07A1E"/></radialGradient></defs>`;
+  coins.sort((a,b)=>a[1]-b[1]).forEach(([x,y,r],i)=>{
+    const tilt = ((i*37)%30)-15;
+    html+=`<g transform="translate(${x} ${y}) rotate(${tilt})"><ellipse cx="0" cy="3" rx="${r}" ry="${r*.92}" fill="#8A5C16"/><ellipse cx="0" cy="0" rx="${r}" ry="${r*.92}" fill="url(#gc)"/><ellipse cx="0" cy="0" rx="${r*.72}" ry="${r*.66}" fill="none" stroke="#9C6A1C" stroke-opacity=".7" stroke-width="2.4"/><rect x="${-r*.22}" y="${-r*.22}" width="${r*.44}" height="${r*.44}" fill="#7A0910"/></g>`;
+  });
+  // gold ingot
+  html+=`<g transform="translate(206 120)"><path d="M-30 6 Q-26 -14 -12 -10 Q0 -26 12 -10 Q26 -14 30 6 Q0 18 -30 6Z" fill="#F2C14E" stroke="#9C6A1C" stroke-width="2"/><ellipse cx="0" cy="-8" rx="10" ry="8" fill="#FFE39A"/></g>`;
+  svg.innerHTML=html;
+})();
+const env=$("#env"), stage=$("#stage");
+let tx=0,ty=0,cxr=0,cyr=0;
+function tilt(){
+  cxr+=(tx-cxr)*.08; cyr+=(ty-cyr)*.08;
+  const t=performance.now()/1000;
+  const idleX = reduce?0:Math.sin(t*.7)*3, idleY = reduce?0:Math.cos(t*.5)*4;
+  env.style.transform=`rotateX(${cyr+idleX}deg) rotateY(${cxr+idleY}deg)`;
+  requestAnimationFrame(tilt);
+}
+tilt();
+addEventListener("pointermove",e=>{
+  if(e.pointerType==="touch") return;
+  const r=stage.getBoundingClientRect(); const mx=(e.clientX-(r.left+r.width/2))/r.width, my=(e.clientY-(r.top+r.height/2))/r.height;
+  tx=Math.max(-1,Math.min(1,mx))*22; ty=Math.max(-1,Math.min(1,my))*-16;
+});
+function mouthPoint(){
+  const r=env.getBoundingClientRect();
+  return {x:r.left+r.width*.5, y:r.top+r.height*.36};
+}
+function burst(n=120,power=17){
+  const m=mouthPoint();
+  spawnCoins(m.x,m.y,n,power);
+  spawnConfetti(m.x,m.y,Math.round(n*.6),power*.9);
+  env.animate([{scale:1},{scale:1.06},{scale:.98},{scale:1}],{duration:520,easing:"cubic-bezier(.3,1.6,.5,1)"});
+}
+env.addEventListener("click",()=>{ burst(40,14); clink(.14); firecrackers(8,.4); });
+// idle trickle so the envelope never looks still
+setInterval(()=>{ if(document.hidden||reduce) return; const r=env.getBoundingClientRect(); if(r.bottom<0||r.top>H) return; const m=mouthPoint(); spawnCoins(m.x,m.y,1,11,.6); },900);
+
+/* ================= GATE ================= */
+let entered=false;
+function enter(withSound){
+  if(entered) return; entered=true;
+  if(withSound){ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); setSound(true); }
+  else setSound(false);
+  const k=$("#kai"); k.classList.add("spin");
+  setTimeout(()=>{ $("#card").classList.add("open"); chime(); },700);
+  setTimeout(()=>{
+    $("#gate").classList.add("gone"); document.documentElement.style.overflow="";
+    setTimeout(()=>{ burst(180,19); firecrackers(70,2.2); },380);
+  },1250);
+}
+document.documentElement.style.overflow="hidden";
+$("#kai").addEventListener("click",()=>enter(true));
+$("#skip").addEventListener("click",()=>enter(false));
+addEventListener("keydown",e=>{ if(!entered&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); enter(true);} });
+
+/* ================= CLOCK ================= */
+function pad(n){return String(n).padStart(2,"0")}
+let lastHour=null;
+function tick(){
+  const now=new Date();
+  const next=new Date(now); next.setUTCMinutes(0,0,0); next.setUTCHours(now.getUTCHours()+1);
+  const left=Math.max(0,next-now); const m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
+  $("#cd").textContent=`${pad(m)}:${pad(s)}`;
+  const loc=next.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  $("#cdAt").textContent=`at ${pad(next.getUTCHours())}:00 UTC · ${loc} your time`;
+  const h=now.getUTCHours();
+  if(lastHour!==null && h!==lastHour && entered){ burst(220,20); firecrackers(80,2.4); chime(); }
+  lastHour=h;
+}
+tick(); setInterval(tick,1000);
+
+/* ================= RPC ================= */
+const RPCS=["/api/rpc","https://solana-rpc.publicnode.com"];
+let rpcIdx=0;
+async function rpc(method,params){
+  for(let tries=0;tries<RPCS.length;tries++){
+    const url=RPCS[(rpcIdx+tries)%RPCS.length];
+    try{
+      const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
+      if(!r.ok) throw 0;
+      const j=await r.json(); if(j.error) throw 0;
+      rpcIdx=(rpcIdx+tries)%RPCS.length; return j.result;
+    }catch(e){}
+  }
+  throw new Error("rpc");
+}
+
+/* ================= SEED (live blockhash) ================= */
+let SEED=null, SEEDSLOT=null;
+async function pullSeed(){
+  try{
+    const r=await rpc("getLatestBlockhash",[{commitment:"finalized"}]);
+    const bh=r.value.blockhash, slot=r.context.slot;
+    if(bh!==SEED){
+      const fresh=!SEED; SEED=bh; SEEDSLOT=slot;
+      const el=$("#hash"); el.innerHTML="";
+      const sp=document.createElement("span"); sp.className="fresh"; sp.textContent=bh; el.appendChild(sp);
+      setTimeout(()=>sp.classList.remove("fresh"),700);
+      $("#slot").textContent="slot "+slot.toLocaleString("en-US");
+      $("#seedline").innerHTML=`Seed: <b>block ${slot.toLocaleString("en-US")}</b> · ${bh.slice(0,10)}…`;
+      if(fresh && !splitDone) runSplit(true);
+    }
+  }catch(e){}
+}
+pullSeed(); setInterval(()=>{ if(!document.hidden) pullSeed(); },2500);
+
+/* ================= LUCKY SPLIT ================= */
+async function sha256(str){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return new Uint32Array(b);
+}
+const rotl=(x,k)=>(x<<k)|(x>>>(32-k));
+function xoshiro(s){ let [a,b,c,d]=s.map(x=>x>>>0); return ()=>{ const r=Math.imul(rotl(Math.imul(b,5),7),9)>>>0; const t=b<<9; c^=a; d^=b; b^=c; a^=d; c^=t; d=rotl(d,11); return r/4294967296; }; }
+function luckySplit(totalLamports,n,rand){
+  const out=[]; let left=totalLamports, k=n; const MIN=100000; // 0.0001 SOL
+  for(let i=0;i<n-1;i++){
+    const max=Math.floor(left/k*2);
+    let amt=Math.floor(rand()*max);
+    amt=Math.max(MIN,Math.min(amt,left-MIN*(k-1)));
+    out.push(amt); left-=amt; k--;
+  }
+  out.push(left);
+  return out;
+}
+const grid=$("#grid88");
+const cells=[];
+for(let i=0;i<88;i++){
+  const d=document.createElement("div"); d.className="mini";
+  d.innerHTML=`<div class="fa"></div><div class="fb"><span class="amt"></span><span class="n">#${i+1}</span></div>`;
+  grid.appendChild(d); cells.push(d);
+}
+function fmt(l){ const s=l/LAMPORTS; return s>=100? s.toFixed(1) : s>=10? s.toFixed(2) : s>=1? s.toFixed(3) : s.toFixed(4).replace(/^0/,""); }
+function fmtS(l){ const s=l/LAMPORTS; return s>=100? s.toFixed(2): s>=1? s.toFixed(3): s.toFixed(4); }
+let splitDone=false, splitting=false;
+async function runSplit(auto){
+  if(splitting) return; splitting=true; splitDone=true;
+  let pot=parseFloat($("#potIn").value); if(!(pot>=CFG.MIN_POT)) { pot=CFG.MIN_POT; $("#potIn").value=pot; }
+  pot=Math.min(pot,100000);
+  const lam=Math.round(pot*LAMPORTS);
+  const seedStr=(SEED||("browser-"+crypto.getRandomValues(new Uint32Array(2)).join("")))+"|"+lam;
+  if(!SEED) $("#seedline").innerHTML=`Seed: <b>your browser</b> · no Solana block yet`;
+  const s=await sha256(seedStr); const rand=xoshiro([s[0]|1,s[1],s[2],s[3]]);
+  // shuffle the order like the grab order
+  const amts=luckySplit(lam,88,rand);
+  const sorted=[...amts].sort((a,b)=>a-b);
+  const best=amts.indexOf(sorted[87]);
+  // collapse
+  cells.forEach(c=>{ c.classList.remove("flip","best"); });
+  if(!reduce){
+    const gr=grid.getBoundingClientRect(); const cxp=gr.left+gr.width/2, cyp=gr.top+gr.height/2;
+    cells.forEach((c,i)=>{
+      const r=c.getBoundingClientRect(); const dx=cxp-(r.left+r.width/2), dy=cyp-(r.top+r.height/2);
+      c.animate([{transform:`translate(${dx}px,${dy}px) rotate(${(Math.random()-.5)*90}deg) scale(.4)`,opacity:0},{transform:"none",opacity:1}],{duration:700+Math.random()*300,delay:i*6,easing:"cubic-bezier(.2,.9,.25,1.15)",fill:"backwards"});
+    });
+    const m=grid.getBoundingClientRect(); if(m.top<H&&m.bottom>0){ spawnConfetti(cxp,cyp,50,10); firecrackers(18,.8); }
+  }
+  await new Promise(r=>setTimeout(r,reduce?50:900));
+  const order=[...Array(88).keys()];
+  order.forEach((i,k)=>{
+    const c=cells[i]; c.querySelector(".amt").textContent=fmt(amts[i]);
+    c.title=`Grab #${i+1}: ${fmtS(amts[i])} SOL`;
+    if(i===best) c.classList.add("best");
+    setTimeout(()=>{ c.classList.add("flip"); if(k%6===0) clink(.05); },reduce?0:k*14);
+  });
+  setTimeout(()=>{
+    $("#sBest").innerHTML=`${fmtS(sorted[87])}<small>SOL</small>`;
+    $("#sMin").innerHTML=`${fmtS(sorted[0])}<small>SOL</small>`;
+    $("#sMed").innerHTML=`${fmtS((sorted[43]+sorted[44])/2)}<small>SOL</small>`;
+    $("#sX").innerHTML=`${(sorted[87]/(lam/88)).toFixed(2)}<small>× avg</small>`;
+    if(!reduce){ const r=cells[best].getBoundingClientRect(); if(r.top<H&&r.bottom>0){ spawnCoins(r.left+r.width/2,r.top,14,9); chime(); } }
+    splitting=false;
+  },reduce?60:88*14+650);
+}
+$("#cut").addEventListener("click",()=>{ audioInit(); runSplit(false); });
+$("#potIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); runSplit(false);} });
+const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting && entered){ runSplit(true); io.disconnect(); } }); },{threshold:.35});
+io.observe(grid);
+setTimeout(()=>{ if(!splitDone) runSplit(true); },2500);
+
+/* ================= LINKS / CA ================= */
+const CA=(CFG.CA||"").trim();
+if(CA){
+  const buy=CFG.BUY||`https://pump.fun/coin/${CA}`, chart=CFG.CHART||`https://gmgn.ai/sol/token/${CA}`;
+  [["#navBuy",buy],["#heroBuy",buy],["#tokBuy",buy],["#heroChart",chart],["#tokChart",chart]].forEach(([s,h])=>{ const a=$(s); a.href=h; a.hidden=false; });
+  $("#caBox").hidden=false; $("#caTxt").textContent=CA; $("#tokCta").hidden=false;
+  $("#caCopy").addEventListener("click",()=>{
+    const done=()=>{ const t=$("#toast"); t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1200); };
+    (navigator.clipboard?navigator.clipboard.writeText(CA):Promise.reject()).then(done).catch(()=>{ const r=document.createRange(); r.selectNodeContents($("#caTxt")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); });
+  });
+}
+if(CFG.X){ ["#heroX","#tokX"].forEach(s=>{ const a=$(s); a.href=CFG.X; a.hidden=false; }); }
+
+/* ================= POT + HISTORY (envelope wallet) ================= */
+let SOLUSD=null;
+async function pullPrice(){
+  try{ const r=await fetch("https://lite-api.jup.ag/price/v3?ids=So11111111111111111111111111111111111111112"); const j=await r.json(); SOLUSD=j.So11111111111111111111111111111111111111112.usdPrice; }catch(e){}
+}
+const FW=(CFG.FEE_WALLET||"").trim();
+let lastPot=null;
+async function pullPot(){
+  try{
+    const b=await rpc("getBalance",[FW,{commitment:"confirmed"}]);
+    const sol=Math.max(0,(b.value-890880)/LAMPORTS); // keep the rent-exempt reserve out of the pot
+    $("#pot").textContent=sol.toFixed(sol>=10?2:3);
+    $("#potUsd").textContent=SOLUSD?`≈ $${(sol*SOLUSD).toLocaleString("en-US",{maximumFractionDigits:0})} · ${(sol*CFG.ENVELOPE_PCT/100/88).toFixed(4)} SOL avg grab`:"";
+    if(lastPot!==null && sol>lastPot+0.0005 && entered){ const m=mouthPoint(); spawnCoins(m.x,m.y,Math.min(40,6+Math.round((sol-lastPot)*400)),12); clink(.1); }
+    lastPot=sol;
+    const v=parseFloat($("#potIn").value); if(!splitDone||v===8.88){ if(sol>=CFG.MIN_POT) $("#potIn").value=sol.toFixed(3); }
+  }catch(e){}
+}
+async function pullHistory(){
+  try{
+    const sigs=await rpc("getSignaturesForAddress",[FW,{limit:60}]);
+    const rows=[];
+    for(const s of sigs){
+      if(rows.length>=8) break;
+      if(s.err) continue;
+      let tx; try{ tx=await rpc("getTransaction",[s.signature,{maxSupportedTransactionVersion:0,commitment:"confirmed"}]); }catch(e){ continue; }
+      if(!tx||!tx.meta) continue;
+      const keys=(tx.transaction.message.accountKeys||tx.transaction.message.staticAccountKeys||[]).map(k=>typeof k==="string"?k:k.pubkey);
+      const fi=keys.indexOf(FW); if(fi<0) continue;
+      const pre=tx.meta.preBalances, post=tx.meta.postBalances;
+      if(post[fi]>=pre[fi]) continue;
+      const gains=[]; keys.forEach((k,i)=>{ if(i!==fi){ const d=post[i]-pre[i]; if(d>0) gains.push(d);} });
+      if(gains.length<5) continue;
+      rows.push({t:(tx.blockTime||s.blockTime)*1000, total:gains.reduce((a,b)=>a+b,0), n:gains.length, best:Math.max(...gains), sig:s.signature});
+    }
+    const h=$("#hist");
+    if(rows.length){
+      h.innerHTML=rows.map(r=>{ const d=new Date(r.t); return `<div class="hrow"><span class="tm">${pad(d.getUTCHours())}:00 UTC</span><span>${fmtS(r.total)} SOL</span><span>${r.n} wallets · best ${fmtS(r.best)}</span><a href="https://solscan.io/tx/${r.sig}" target="_blank" rel="noopener">${r.sig.slice(0,10)}… on Solscan</a></div>`; }).join("");
+    }else{
+      h.innerHTML=`<div class="hrow" style="grid-template-columns:1fr"><span>No envelope has opened yet. The first one opens at the next :00 UTC with at least 0.088 SOL inside.</span></div>`;
+    }
+  }catch(e){}
+}
+if(FW){
+  $("#potBox").hidden=false; $("#live").hidden=false;
+  pullPrice().then(pullPot); setInterval(()=>{ if(!document.hidden) pullPot(); },12000); setInterval(pullPrice,60000);
+  pullHistory(); setInterval(()=>{ if(!document.hidden) pullHistory(); },120000);
+}
+
+/* ================= LIVE BUYS ================= */
+if(CA){
+  const feed=$("#feed"); $("#live").hidden=false;
+  let ws, backoff=1000;
+  const connect=()=>{
+    try{ ws=new WebSocket("wss://pumpportal.fun/api/data"); }catch(e){ return; }
+    ws.onopen=()=>{ backoff=1000; ws.send(JSON.stringify({method:"subscribeTokenTrade",keys:[CA]})); };
+    ws.onmessage=e=>{
+      let d; try{ d=JSON.parse(e.data);}catch(_){return}
+      if(!d||!d.txType||d.mint!==CA) return;
+      const sol=+d.solAmount||0;
+      feed.hidden=false;
+      const row=document.createElement("div");
+      row.innerHTML=`<b>${d.txType==="buy"?"+":"−"}${sol.toFixed(3)} SOL</b><span>${d.txType}</span><span>${(d.traderPublicKey||"").slice(0,4)}…${(d.traderPublicKey||"").slice(-4)}</span>`;
+      feed.prepend(row); while(feed.children.length>14) feed.lastChild.remove();
+      if(d.txType==="buy" && entered){ const m=mouthPoint(); spawnCoins(m.x,m.y,Math.min(50,3+Math.round(sol*12)),12+Math.min(8,sol*2)); clink(.1); }
+    };
+    ws.onclose=()=>{ setTimeout(connect,backoff); backoff=Math.min(20000,backoff*2); };
+  };
+  connect();
+}
+})();
+</script>
+</body>
+</html>
